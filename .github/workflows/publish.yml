@@ -15,6 +15,8 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      built: ${{ steps.build.outputs.built }}
     container:
       image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-26.08
       options: --privileged
@@ -30,30 +32,57 @@ jobs:
           test -n "$key"
           echo "GPG_KEY_ID=$key" >> "$GITHUB_ENV"
 
-      - name: Build every app
+      # The bucket holds the Flatpak repository (repo/) and a hash of each app it was built from (built/).
+      - name: Download the published repository
+        uses: docker://rclone/rclone:1.75.2
+        env: &rclone
+          RCLONE_CONFIG_R2_TYPE: s3
+          RCLONE_CONFIG_R2_PROVIDER: Cloudflare
+          RCLONE_CONFIG_R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          RCLONE_CONFIG_R2_ENDPOINT: https://41808471c3221d715a79106b57dec21b.eu.r2.cloudflarestorage.com
+          RCLONE_CONFIG_R2_NO_CHECK_BUCKET: "true"
+        with:
+          args: sync r2:flatpaks site --checksum --fast-list
+
+      - name: Build the apps that changed
+        id: build
         run: |
           flatpak remote-add --user --if-not-exists flathub "$FLATHUB_REPO"
-          mkdir -p dist
+          mkdir -p dist site/built
+
+          # An app that was deleted has to leave the repository: start again without it.
+          for stamp in site/built/*; do
+            if [ -e "$stamp" ] && [ ! -d "$(basename "$stamp")" ]; then
+              rm -rf site/repo site/built
+              mkdir site/built
+              break
+            fi
+          done
+
           for manifest in */*.yml; do
             app=$(dirname "$manifest")
+            hash=$(find "$app" -type f | sort | xargs sha256sum | sha256sum | cut -d' ' -f1)
+            if [ -d site/repo ] && [ "$(cat "site/built/$app" 2> /dev/null)" = "$hash" ]; then
+              echo "$app is unchanged"
+              continue
+            fi
             flatpak-builder --user --disable-rofiles-fuse --force-clean \
               --install-deps-from=flathub --default-branch=stable \
-              --repo=repo --gpg-sign="$GPG_KEY_ID" \
+              --repo=site/repo --gpg-sign="$GPG_KEY_ID" \
               "build/$app" "$manifest"
             flatpak build-bundle --runtime-repo="$FLATHUB_REPO" \
-              repo "dist/$app.flatpak" "$app" stable
+              site/repo "dist/$app.flatpak" "$app" stable
+            echo "$hash" > "site/built/$app"
+            echo "built=true" >> "$GITHUB_OUTPUT"
           done
 
       - name: Update the repository
+        if: steps.build.outputs.built == 'true'
         run: |
           flatpak build-update-repo --gpg-sign="$GPG_KEY_ID" \
             --title="artur9010 flatpaks" --default-branch=stable \
-            --generate-static-deltas --prune repo
-
-      - name: Lay out the site
-        run: |
-          mkdir site
-          mv repo site/repo
+            --generate-static-deltas --prune --prune-depth=2 site/repo
           gpg --armor --export "$GPG_KEY_ID" > site/repo/signing-key.asc
           cat > site/repo/artur9010.flatpakrepo <<EOF
           [Flatpak Repo]
@@ -64,30 +93,43 @@ jobs:
           GPGKey=$(gpg --export "$GPG_KEY_ID" | base64 --wrap=0)
           EOF
 
-      - uses: actions/upload-pages-artifact@v5
+      # New objects first and the summary after them, so no client sees a version whose files
+      # aren't there yet. The hashes go last, so a failed upload is retried on the next push.
+      - name: Upload the objects
+        if: steps.build.outputs.built == 'true'
+        uses: docker://rclone/rclone:1.75.2
+        env: *rclone
         with:
-          path: site
+          args: copy site r2:flatpaks --checksum --fast-list --exclude /repo/summary* --exclude /built/**
+
+      - name: Upload the summary
+        if: steps.build.outputs.built == 'true'
+        uses: docker://rclone/rclone:1.75.2
+        env: *rclone
+        with:
+          args: copy site r2:flatpaks --checksum --fast-list --include /repo/summary*
+
+      - name: Upload the hashes and remove old objects
+        if: steps.build.outputs.built == 'true'
+        uses: docker://rclone/rclone:1.75.2
+        env: *rclone
+        with:
+          args: sync site r2:flatpaks --checksum --fast-list
 
       - uses: actions/upload-artifact@v7
+        if: steps.build.outputs.built == 'true'
         with:
           name: bundles
           path: dist/*.flatpak
           compression-level: 0
 
-  deploy:
+  release:
     needs: build
+    if: needs.build.outputs.built == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.pages.outputs.page_url }}
     steps:
-      - id: pages
-        uses: actions/deploy-pages@v5
-
       - uses: actions/checkout@v7
 
       - uses: actions/download-artifact@v8
