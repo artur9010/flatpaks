@@ -41,6 +41,12 @@ modules:
         strip-components: 0
         only-arches:
           - x86_64
+        x-checker-data:
+          type: json
+          url: https://api.github.com/repos/horizon-rust/horizon/releases?per_page=100
+          version-query: '[.[] | select(.tag_name | startswith("launcher@"))][0].tag_name | sub("^launcher@"; "")'
+          url-query: '[.[] | select(.tag_name | startswith("launcher@"))][0].assets[] | select(.name == "horizon-launcher-linux-x86_64.tar.gz") | .browser_download_url'
+          is-main-source: true
       - type: file
         url: https://raw.githubusercontent.com/horizon-rust/horizon/6d586e2b2368e1bcc6e312cbdf51565cf7e3730b/packaging/linux/horizon-launcher.desktop
         sha256: 436447e5ce86e144d744cf8f0e57aaeb2fe7f16e35cf62f4a3c7a56b0b0ddf31
