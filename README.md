@@ -21,4 +21,4 @@ flatpak install --user artur9010 dev.playhorizon.horizon
 
 Each app has a folder named after its app ID, holding `<app-id>.yml` and `<app-id>.metainfo.xml`. The newest `<release>` in the metainfo names the GitHub Release.
 
-New versions normally arrive as a daily bot pull request. Merging it publishes the update. See [AGENTS.md](AGENTS.md) for details.
+New versions normally arrive as a bot pull request, checked for hourly. It can only be merged once it builds, and merging it publishes the update. See [AGENTS.md](AGENTS.md) for details.

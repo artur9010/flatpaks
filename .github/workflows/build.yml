@@ -1,0 +1,39 @@
+name: Build
+
+# Pull requests opened by update.yml use GITHUB_TOKEN, which doesn't start pull_request workflows.
+# update.yml dispatches this workflow on their branches instead.
+on:
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+env:
+  FLATHUB_REPO: https://dl.flathub.org/repo/flathub.flatpakrepo
+
+jobs:
+  # The master ruleset requires this check by name, so keep it a single job and don't rename it.
+  flatpak-builder:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-26.08
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Build the apps that changed
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          flatpak remote-add --user --if-not-exists flathub "$FLATHUB_REPO"
+
+          for manifest in */*.yml; do
+            app=$(dirname "$manifest")
+            if git diff --quiet origin/master...HEAD -- "$app"; then
+              echo "$app is unchanged"
+              continue
+            fi
+            flatpak-builder --user --disable-rofiles-fuse --force-clean \
+              --install-deps-from=flathub --default-branch=stable \
+              "build/$app" "$manifest"
+          done
