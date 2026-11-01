@@ -51,6 +51,12 @@ jobs:
           flatpak remote-add --user --if-not-exists flathub "$FLATHUB_REPO"
           mkdir -p dist site/built
 
+          # Object storage has no empty folders, and OSTree needs these to exist.
+          if [ -d site/repo ]; then
+            mkdir -p site/repo/refs/heads site/repo/refs/mirrors site/repo/refs/remotes \
+              site/repo/state site/repo/tmp/cache site/repo/extensions
+          fi
+
           # An app that was deleted has to leave the repository: start again without it.
           for stamp in site/built/*; do
             if [ -e "$stamp" ] && [ ! -d "$(basename "$stamp")" ]; then
