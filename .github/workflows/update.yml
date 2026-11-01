@@ -2,7 +2,7 @@ name: Check for updates
 
 on:
   schedule:
-    - cron: "0 6 * * *"
+    - cron: "17 * * * *"
   workflow_dispatch:
 
 jobs:
@@ -38,3 +38,24 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           args: --update --never-fork ${{ matrix.manifest }}
+
+  # Bot pull requests don't start pull_request workflows, so the required build is started here.
+  build:
+    needs: check
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      checks: read
+      pull-requests: read
+    steps:
+      - name: Build the update branches that have no checks yet
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          branches=$(gh pr list --state open --limit 100 --json headRefName,statusCheckRollup --jq \
+            '.[] | select((.headRefName | startswith("update-master-")) and (.statusCheckRollup | length == 0)) | .headRefName')
+          for branch in $branches; do
+            gh workflow run build.yml --ref "$branch"
+          done

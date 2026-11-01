@@ -13,7 +13,9 @@ One folder per app, named after the app ID, holding `<app-id>.yml` and `<app-id>
 
 ## Publishing
 
-Anything that lands on `master` publishes straight away. There are no PR builds and no staging.
+Anything that lands on `master` publishes straight away. There is no staging.
+
+`.github/workflows/build.yml` runs `flatpak-builder` on each PR for the apps it changes. A ruleset on `master` requires its `flatpak-builder` check, so a PR that doesn't build can't be merged. Repo admins bypass the ruleset, which keeps direct pushes to `master` working, and they also get an option to merge a failing PR. Don't rename the job without updating the ruleset, or every PR will wait for a check that never arrives.
 
 `.github/workflows/publish.yml` rebuilds only apps whose folder hash changed. The Flatpak repo (`repo/`) and the hashes (`built/`) live in the `flatpaks` Cloudflare R2 bucket. Bundles go to a GitHub Release named `<app-id>-<version>`, using the newest `<release>` in the metainfo.
 
@@ -29,7 +31,9 @@ The R2 upload order must stay objects, then `summary`, then hashes. Otherwise cl
 
 ## Updating an app
 
-`.github/workflows/update.yml` runs `flatpak-external-data-checker` daily and opens a PR for each outdated app. Merging it ships the update. Run it by hand from the Actions tab, or with `gh workflow run update.yml`.
+`.github/workflows/update.yml` runs `flatpak-external-data-checker` hourly and opens a PR for each new version. Merging it ships the update. Run it by hand from the Actions tab, or with `gh workflow run update.yml`.
+
+Bot PRs don't start `pull_request` workflows, so `update.yml` dispatches `build.yml` on any `update-master-*` branch with no checks yet. This can take until the next hourly run. If a PR is stuck waiting for its check, run `gh workflow run build.yml --ref <branch>`.
 
 If several PRs pile up, merge the newest and close the others.
 
