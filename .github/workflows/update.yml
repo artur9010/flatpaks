@@ -24,7 +24,10 @@ jobs:
       matrix:
         manifest: ${{ fromJSON(needs.manifests.outputs.manifests) }}
     steps:
+      # Saved credentials would override the app token the checker pushes with.
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       # Pull requests opened with GITHUB_TOKEN wait for approval before build.yml runs on them.
       # Opening them as the app starts it straight away.
