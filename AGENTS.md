@@ -33,7 +33,7 @@ The R2 upload order must stay objects, then `summary`, then hashes. Otherwise cl
 
 `.github/workflows/update.yml` runs `flatpak-external-data-checker` hourly and opens a PR for each new version. Merging it ships the update. Run it by hand from the Actions tab, or with `gh workflow run update.yml`.
 
-Bot PRs don't start `pull_request` workflows, so `update.yml` dispatches `build.yml` on any `update-master-*` branch with no checks yet. This can take until the next hourly run. If a PR is stuck waiting for its check, run `gh workflow run build.yml --ref <branch>`.
+The PRs are opened by the `craftum-renovate-bot` GitHub App, using the `APP_CLIENT_ID` repo variable and the `APP_PRIVATE_KEY` secret. Don't switch it to `GITHUB_TOKEN`: PRs opened that way wait for manual approval before `build.yml` runs. The app needs read and write access to contents and pull requests on this repo.
 
 If several PRs pile up, merge the newest and close the others.
 
@@ -49,7 +49,7 @@ nix-shell -p actionlint --run 'actionlint'
 
 ## Secrets
 
-`GPG_PRIVATE_KEY`, `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY` are GitHub secrets. Never commit them or paste them into a chat.
+`GPG_PRIVATE_KEY`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` and `APP_PRIVATE_KEY` are GitHub secrets. Never commit them or paste them into a chat.
 
 Don't change the signing key. Every user would have to re-add the remote.
 

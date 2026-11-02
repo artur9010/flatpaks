@@ -19,9 +19,6 @@ jobs:
   check:
     needs: manifests
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
     strategy:
       fail-fast: false
       matrix:
@@ -29,36 +26,22 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # Pull requests opened with GITHUB_TOKEN wait for approval before build.yml runs on them.
+      # Opening them as the app starts it straight away.
+      - id: app
+        uses: actions/create-github-app-token@v3.3.0
+        with:
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
       - uses: docker://ghcr.io/flathub/flatpak-external-data-checker:latest
         env:
-          GIT_AUTHOR_NAME: Flatpak External Data Checker
-          GIT_COMMITTER_NAME: Flatpak External Data Checker
-          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
-          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_AUTHOR_NAME: craftum-renovate-bot[bot]
+          GIT_COMMITTER_NAME: craftum-renovate-bot[bot]
+          GIT_AUTHOR_EMAIL: 226380229+craftum-renovate-bot[bot]@users.noreply.github.com
+          GIT_COMMITTER_EMAIL: 226380229+craftum-renovate-bot[bot]@users.noreply.github.com
+          GITHUB_TOKEN: ${{ steps.app.outputs.token }}
         with:
           args: --update --never-fork ${{ matrix.manifest }}
-
-  # Bot pull requests don't start pull_request workflows, so the required build is started here.
-  build:
-    needs: check
-    if: ${{ !cancelled() }}
-    runs-on: ubuntu-latest
-    permissions:
-      actions: write
-      checks: read
-      pull-requests: read
-      statuses: write
-    steps:
-      - name: Build the update branches that have no checks yet
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        run: |
-          gh pr list --state open --limit 100 --json headRefName,headRefOid,statusCheckRollup --jq \
-            '.[] | select((.headRefName | startswith("update-master-")) and (.statusCheckRollup | length == 0))
-              | "\(.headRefName) \(.headRefOid)"' |
-          while read -r branch sha; do
-            gh api "repos/$GH_REPO/statuses/$sha" -f context=flatpak-builder -f state=pending
-            gh workflow run build.yml --ref "$branch"
-          done
