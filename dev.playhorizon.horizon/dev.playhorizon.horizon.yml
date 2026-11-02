@@ -37,8 +37,8 @@ modules:
       # client id and API key that only the project's release workflow builds in.
       - type: archive
         url: 
-          https://github.com/horizon-rust/horizon/releases/download/launcher%400.2.35/horizon-launcher-linux-x86_64.tar.gz
-        sha256: df48081fe41d4303f31a9c1e1ec8c816c5ac5649b4581a00cf6d184ca384463b
+          https://github.com/horizon-rust/horizon/releases/download/launcher%400.2.36/horizon-launcher-linux-x86_64.tar.gz
+        sha256: 8525a83ae774fe0d78db9300a9d2e329dbae9a86f43f1d3f10e08eedd16ad373
         strip-components: 0
         only-arches:
           - x86_64

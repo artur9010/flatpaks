@@ -50,8 +50,11 @@
     <control>keyboard</control>
   </supports>
   <releases>
-    <release version="0.2.35" date="2026-11-01">
+    <release version="0.2.36" date="2026-11-02">
       <description></description>
+    </release>
+    <release version="0.2.35" date="2026-11-01">
+      <description/>
     </release>
     <release version="0.2.34" date="2026-11-01">
       <url type="details">https://github.com/horizon-rust/horizon/releases/tag/launcher@0.2.34</url>
