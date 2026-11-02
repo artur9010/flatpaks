@@ -1,7 +1,8 @@
 name: Build
 
 # Pull requests opened by update.yml use GITHUB_TOKEN, which doesn't start pull_request workflows.
-# update.yml dispatches this workflow on their branches instead.
+# update.yml dispatches this workflow on their branches instead. A dispatched run's check isn't
+# shown on the pull request, so it also reports a commit status of the same name.
 on:
   pull_request:
     branches: [master]
@@ -37,3 +38,24 @@ jobs:
               --install-deps-from=flathub --default-branch=stable \
               "build/$app" "$manifest"
           done
+
+  # update.yml sets the status to pending when it dispatches this workflow.
+  status:
+    needs: flatpak-builder
+    if: always() && github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      statuses: write
+    steps:
+      - name: Report the build result
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESULT: ${{ needs.flatpak-builder.result }}
+        run: |
+          case "$RESULT" in
+            success) state=success ;;
+            failure) state=failure ;;
+            *) state=error ;;
+          esac
+          gh api "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" -f context=flatpak-builder -f state="$state" \
+            -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"

@@ -48,14 +48,17 @@ jobs:
       actions: write
       checks: read
       pull-requests: read
+      statuses: write
     steps:
       - name: Build the update branches that have no checks yet
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          branches=$(gh pr list --state open --limit 100 --json headRefName,statusCheckRollup --jq \
-            '.[] | select((.headRefName | startswith("update-master-")) and (.statusCheckRollup | length == 0)) | .headRefName')
-          for branch in $branches; do
+          gh pr list --state open --limit 100 --json headRefName,headRefOid,statusCheckRollup --jq \
+            '.[] | select((.headRefName | startswith("update-master-")) and (.statusCheckRollup | length == 0))
+              | "\(.headRefName) \(.headRefOid)"' |
+          while read -r branch sha; do
+            gh api "repos/$GH_REPO/statuses/$sha" -f context=flatpak-builder -f state=pending
             gh workflow run build.yml --ref "$branch"
           done
