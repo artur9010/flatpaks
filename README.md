@@ -9,6 +9,12 @@ flatpak remote-add --user --if-not-exists artur9010 https://flatpaks.motyka.pro/
 flatpak install --user artur9010 dev.playhorizon.horizon
 ```
 
+If it says the runtime `org.freedesktop.Platform` "was not found", you probably have Flathub only as a system remote, and `--user` installs can't use it. Add Flathub for your user too, then run the install again:
+
+```
+flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+```
+
 `flatpak update` picks up new versions. Single-file `.flatpak` bundles are on [GitHub Releases](https://github.com/artur9010/flatpaks/releases); they don't update on their own.
 
 ## Apps
