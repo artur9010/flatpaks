@@ -38,9 +38,8 @@ modules:
       # The release build, not a source build: Microsoft sign-in and CurseForge need the
       # client id and API key that only the project's release workflow builds in.
       - type: archive
-        url: 
-          https://github.com/horizon-rust/horizon/releases/download/launcher%400.2.37/horizon-launcher-linux-x86_64.tar.gz
-        sha256: f1cb04adcc858ce0919efe5abd3f7264040b2ba530ab5d44f09381e084b31bfe
+        url: https://github.com/horizon-rust/horizon/releases/download/launcher%400.2.38/horizon-launcher-linux-x86_64.tar.gz
+        sha256: d54e6167c80dd9727570dc18cee081380e5d267b106be36cc3649c6ec463871f
         strip-components: 0
         only-arches:
           - x86_64
@@ -53,24 +52,19 @@ modules:
             | select(.name == "horizon-launcher-linux-x86_64.tar.gz") | .browser_download_url'
           is-main-source: true
       - type: file
-        url: 
-          https://raw.githubusercontent.com/horizon-rust/horizon/6d586e2b2368e1bcc6e312cbdf51565cf7e3730b/packaging/linux/horizon-launcher.desktop
+        url: https://raw.githubusercontent.com/horizon-rust/horizon/6d586e2b2368e1bcc6e312cbdf51565cf7e3730b/packaging/linux/horizon-launcher.desktop
         sha256: 436447e5ce86e144d744cf8f0e57aaeb2fe7f16e35cf62f4a3c7a56b0b0ddf31
       - type: file
-        url: 
-          https://raw.githubusercontent.com/horizon-rust/horizon/6d586e2b2368e1bcc6e312cbdf51565cf7e3730b/packaging/linux/horizon.desktop
+        url: https://raw.githubusercontent.com/horizon-rust/horizon/6d586e2b2368e1bcc6e312cbdf51565cf7e3730b/packaging/linux/horizon.desktop
         sha256: f0121d7dbed19084e799d6628628115b4e7140f984e078c058ddc35c179b7518
       - type: file
-        url: 
-          https://raw.githubusercontent.com/horizon-rust/horizon/6d586e2b2368e1bcc6e312cbdf51565cf7e3730b/packaging/icons/hicolor/512x512/apps/horizon.png
+        url: https://raw.githubusercontent.com/horizon-rust/horizon/6d586e2b2368e1bcc6e312cbdf51565cf7e3730b/packaging/icons/hicolor/512x512/apps/horizon.png
         sha256: fefb808a16c99ce04bb77ffae561548603a6776db8d7d71e76becea3411285a1
       - type: file
-        url: 
-          https://raw.githubusercontent.com/horizon-rust/horizon/6d586e2b2368e1bcc6e312cbdf51565cf7e3730b/packaging/icons/hicolor/scalable/apps/horizon.svg
+        url: https://raw.githubusercontent.com/horizon-rust/horizon/6d586e2b2368e1bcc6e312cbdf51565cf7e3730b/packaging/icons/hicolor/scalable/apps/horizon.svg
         sha256: 2a8c0871ae8a1fc4d3be47c8ce187ee5411d9553da241411ddd7e75c61373eb3
       - type: file
-        url: 
-          https://raw.githubusercontent.com/horizon-rust/horizon/6d586e2b2368e1bcc6e312cbdf51565cf7e3730b/LICENSE
+        url: https://raw.githubusercontent.com/horizon-rust/horizon/6d586e2b2368e1bcc6e312cbdf51565cf7e3730b/LICENSE
         sha256: b4b374ae9d0f2d8f7be35c6783e41327431da3b5662605da9ba31493630621df
       - type: file
         path: dev.playhorizon.horizon.metainfo.xml
