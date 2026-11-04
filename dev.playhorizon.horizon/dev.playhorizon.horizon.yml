@@ -38,8 +38,8 @@ modules:
       # The release build, not a source build: Microsoft sign-in and CurseForge need the
       # client id and API key that only the project's release workflow builds in.
       - type: archive
-        url: https://github.com/horizon-rust/horizon/releases/download/launcher%400.2.40/horizon-launcher-linux-x86_64.tar.gz
-        sha256: 7f71e5f79442c4acf0be1acfa2e97bdca621623b3df6c388290792195e52b574
+        url: https://github.com/horizon-rust/horizon/releases/download/launcher%400.2.41/horizon-launcher-linux-x86_64.tar.gz
+        sha256: 7533b577090c41c2e9961eaeb16c3af7ead3bf044e58976057e9a1d8cb48aa4f
         strip-components: 0
         only-arches:
           - x86_64
