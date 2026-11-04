@@ -50,6 +50,11 @@
     <control>keyboard</control>
   </supports>
   <releases>
+    <release version="0.2.37.1" date="2026-11-04">
+      <description>
+        <p>Native mods can be built: the app now runs on the Freedesktop SDK, which has the C compiler and development files they need.</p>
+      </description>
+    </release>
     <release version="0.2.37" date="2026-11-02">
       <description></description>
     </release>

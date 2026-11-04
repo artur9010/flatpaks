@@ -1,5 +1,7 @@
 app-id: dev.playhorizon.horizon
-runtime: org.freedesktop.Platform
+# The SDK, not the Platform: native mods compile the game on the player's computer, and the
+# launcher needs cc, the C headers, pkg-config, and ALSA's and libudev's development files.
+runtime: org.freedesktop.Sdk
 runtime-version: '26.08'
 sdk: org.freedesktop.Sdk
 command: horizon-launcher
