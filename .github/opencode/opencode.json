@@ -1,0 +1,62 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "openrouter/z-ai/glm-5.3-flash",
+  "enabled_providers": ["openrouter"],
+  "share": "disabled",
+  "autoupdate": false,
+  "websearch": false,
+  "mcp": {
+    "servers": {
+      "exa": {
+        "type": "remote",
+        "url": "https://mcp.exa.ai/mcp?tools=web_search_exa,web_fetch_exa",
+        "oauth": false,
+        "codemode": false
+      }
+    }
+  },
+  "permissions": [
+    { "action": "*", "resource": "*", "effect": "deny" },
+    { "action": "read", "resource": "*", "effect": "allow" },
+    { "action": "grep", "resource": "*", "effect": "allow" },
+    { "action": "glob", "resource": "*", "effect": "allow" },
+    { "action": "exa_*", "resource": "*", "effect": "allow" },
+    { "action": "webfetch", "resource": "*", "effect": "allow" },
+    { "action": "shell", "resource": "git *", "effect": "allow" },
+    { "action": "shell", "resource": "ls", "effect": "allow" },
+    { "action": "shell", "resource": "ls *", "effect": "allow" },
+    { "action": "shell", "resource": "cat *", "effect": "allow" },
+    { "action": "shell", "resource": "head *", "effect": "allow" },
+    { "action": "shell", "resource": "tail *", "effect": "allow" },
+    { "action": "shell", "resource": "grep *", "effect": "allow" },
+    { "action": "shell", "resource": "wc *", "effect": "allow" },
+    { "action": "shell", "resource": "sort *", "effect": "allow" },
+    { "action": "shell", "resource": "uniq *", "effect": "allow" },
+    { "action": "shell", "resource": "echo *", "effect": "allow" },
+    { "action": "shell", "resource": "mkdir *", "effect": "allow" },
+    { "action": "shell", "resource": "diff *", "effect": "allow" },
+    { "action": "shell", "resource": "find *", "effect": "allow" },
+    { "action": "shell", "resource": "*../*", "effect": "deny" },
+    { "action": "shell", "resource": "*$*", "effect": "deny" },
+    { "action": "shell", "resource": "*-exec*", "effect": "deny" },
+    { "action": "shell", "resource": "*-ok *", "effect": "deny" },
+    { "action": "shell", "resource": "*-okdir*", "effect": "deny" },
+    { "action": "shell", "resource": "*-delete*", "effect": "deny" },
+    { "action": "shell", "resource": "*-fprint*", "effect": "deny" },
+    { "action": "shell", "resource": "*-fls*", "effect": "deny" },
+    { "action": "shell", "resource": "* /*", "effect": "deny" },
+    { "action": "shell", "resource": "*~*", "effect": "deny" },
+    { "action": "shell", "resource": "*/proc*", "effect": "deny" },
+    { "action": "shell", "resource": "*environ*", "effect": "deny" },
+    { "action": "shell", "resource": "* -c*", "effect": "deny" },
+    { "action": "shell", "resource": "*--config*", "effect": "deny" },
+    { "action": "shell", "resource": "git config*", "effect": "deny" },
+    { "action": "shell", "resource": "git -C * config*", "effect": "deny" },
+    { "action": "shell", "resource": "*alias*", "effect": "deny" },
+    { "action": "shell", "resource": "*!*", "effect": "deny" },
+    { "action": "shell", "resource": "*-pack*", "effect": "deny" },
+    { "action": "shell", "resource": "*ext::*", "effect": "deny" },
+    { "action": "read", "resource": "/proc/*", "effect": "deny" },
+    { "action": "external_directory", "resource": "*", "effect": "deny" }
+  ]
+}
