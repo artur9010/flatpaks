@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=RecompLauncher
+Comment=Find, install, update and play PC recomps
+Exec=recomplauncher
+Icon=com.recomplauncher.app
+Terminal=false
+Categories=Game;
+Keywords=recomp;recompilation;launcher;emulator;
+StartupWMClass=recomplauncher
