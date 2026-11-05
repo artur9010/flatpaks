@@ -24,7 +24,7 @@ jobs:
       matrix:
         manifest: ${{ fromJSON(needs.manifests.outputs.manifests) }}
     steps:
-      # Saved credentials would override the app token the checker pushes with.
+      # Saved credentials would override the app token create-pull-request pushes with.
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
@@ -39,12 +39,41 @@ jobs:
           permission-contents: write
           permission-pull-requests: write
 
+      # Only commit here: the checker names branches after the tree hash, so each version would get its own PR.
       - uses: docker://ghcr.io/flathub/flatpak-external-data-checker:latest
         env:
           GIT_AUTHOR_NAME: craftum-renovate-bot[bot]
           GIT_COMMITTER_NAME: craftum-renovate-bot[bot]
           GIT_AUTHOR_EMAIL: 226380229+craftum-renovate-bot[bot]@users.noreply.github.com
           GIT_COMMITTER_EMAIL: 226380229+craftum-renovate-bot[bot]@users.noreply.github.com
-          GITHUB_TOKEN: ${{ steps.app.outputs.token }}
         with:
-          args: --update --never-fork ${{ matrix.manifest }}
+          args: --commit-only ${{ matrix.manifest }}
+
+      # The checker runs as root, so later steps can't write to what it left in .git.
+      - run: sudo chown -R "$(id -u):$(id -g)" .
+
+      - id: meta
+        env:
+          MANIFEST: ${{ matrix.manifest }}
+        run: |
+          echo "app=$(dirname "$MANIFEST")" >> "$GITHUB_OUTPUT"
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/master)" ]; then
+            echo "title=$(git log -1 --format=%s)" >> "$GITHUB_OUTPUT"
+            {
+              echo "body<<EOF_BODY"
+              git log -1 --format=%b
+              echo "EOF_BODY"
+            } >> "$GITHUB_OUTPUT"
+          fi
+
+      # One branch per app, force-pushed with the newest version, so its PR gets updated in place.
+      - if: steps.meta.outputs.title != ''
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ steps.app.outputs.token }}
+          branch: update/${{ steps.meta.outputs.app }}
+          base: master
+          title: ${{ steps.meta.outputs.title }}
+          body: ${{ steps.meta.outputs.body }}
+          author: craftum-renovate-bot[bot] <226380229+craftum-renovate-bot[bot]@users.noreply.github.com>
+          committer: craftum-renovate-bot[bot] <226380229+craftum-renovate-bot[bot]@users.noreply.github.com>
