@@ -22,6 +22,8 @@ finish-args:
   - --talk-name=org.freedesktop.Notifications
   # Recomps released as .flatpak bundles are installed and started by the host's flatpak
   - --talk-name=org.freedesktop.Flatpak
+  # The default game library (library.rs::default_library_dir)
+  - --filesystem=~/Games/Recomp Library:create
   - --filesystem=xdg-download
   # Desktop and app menu shortcuts
   - --filesystem=xdg-desktop
