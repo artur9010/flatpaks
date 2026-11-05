@@ -38,6 +38,8 @@ jobs:
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           permission-contents: write
           permission-pull-requests: write
+          # Force-pushing an update branch made from an older master changes any workflow files master changed since.
+          permission-workflows: write
 
       # Only commit here: the checker names branches after the tree hash, so each version would get its own PR.
       - uses: docker://ghcr.io/flathub/flatpak-external-data-checker:latest

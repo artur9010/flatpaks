@@ -33,7 +33,7 @@ The R2 upload order must stay objects, then `summary`, then hashes. Otherwise cl
 
 `.github/workflows/update.yml` runs `flatpak-external-data-checker` hourly and opens a PR when an app has a new version. Merging it ships the update. Run it by hand from the Actions tab, or with `gh workflow run update.yml`.
 
-The PRs are opened by the `craftum-renovate-bot` GitHub App, using the `APP_CLIENT_ID` repo variable and the `APP_PRIVATE_KEY` secret. Don't switch it to `GITHUB_TOKEN`: PRs opened that way wait for manual approval before `build.yml` runs. The app needs read and write access to contents and pull requests on this repo.
+The PRs are opened by the `craftum-renovate-bot` GitHub App, using the `APP_CLIENT_ID` repo variable and the `APP_PRIVATE_KEY` secret. Don't switch it to `GITHUB_TOKEN`: PRs opened that way wait for manual approval before `build.yml` runs. The app needs read and write access to contents, pull requests and workflows on this repo. Without workflows, force-pushing an update branch made before a workflow change on `master` fails with `fatal error in commit_refs`.
 
 Each app gets one PR, from the `update/<app-id>` branch. A newer version force-pushes that branch, so the open PR always holds the latest one. Closing a PR doesn't skip its version: the next run opens it again while upstream is still newer.
 
