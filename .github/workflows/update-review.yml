@@ -33,7 +33,7 @@ env:
   PR: ${{ github.event.pull_request.number || inputs.pr }}
   # Hidden marker identifying our comment, so reruns edit it instead of adding one
   MARKER: '<!-- update-review -->'
-  MODEL: opencode/deepseek-v4.1-flash-free
+  MODEL: opencode/glm-5.3-flash-free
   # GitHub release binary: opencode 2.x isn't on npm
   OPENCODE_VERSION: 2.2.5
   OPENCODE_SHA256: 09f44302c10fd036912f59c81fd1aef5df45dd06f649197f9dfc9bbe2a79614e
