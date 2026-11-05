@@ -50,7 +50,10 @@ jobs:
           args: --commit-only ${{ matrix.manifest }}
 
       # The checker runs as root, so later steps can't write to what it left in .git.
-      - run: sudo chown -R "$(id -u):$(id -g)" .
+      # It also leaves its commit on a local update-master-<hash> branch, which create-pull-request would take as the base.
+      - run: |
+          sudo chown -R "$(id -u):$(id -g)" .
+          git checkout -B master
 
       - id: meta
         env:
