@@ -1,0 +1,18 @@
+# Optional scope of upstream source diffs, for the update-review workflow
+# (.github/scripts/upstream-source.sh). A repo that isn't listed is diffed whole.
+#
+# repos.<owner/repo>:
+#   paths:   only these paths are diffed
+#   cargo:   Cargo.toml files whose path dependencies are added to paths, recursively
+#   exclude: paths left out of the diff
+repos:
+  # A monorepo with the game, its server and tools; we ship only the launcher
+  horizon-rust/horizon:
+    paths:
+      - launcher
+      - packaging/linux
+    cargo:
+      - launcher/Cargo.toml
+    exclude:
+      # Translations
+      - launcher/lang

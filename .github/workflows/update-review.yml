@@ -1,0 +1,214 @@
+name: Update review
+
+# Posts an AI review (risk, upstream source changes, sandbox and build impact) as a sticky
+# comment on update PRs, the update/<app-id> branches update.yml opens.
+# CI fetches the upstream source of every bumped source (upstream-source.sh); the model
+# (opencode, .github/opencode/) must read all of it and search the web for each new version,
+# or review-check.sh rejects the session. The model is a free OpenCode Zen model, so no API
+# key. It can read the diff dir, run git and read-only shell commands, search and fetch web
+# pages, nothing else, and gets no GitHub token.
+# If no session passes, the PR gets a "not reviewed" comment and the job fails. The master
+# ruleset requires this job, so keep its name. Other PRs skip it, which counts as passing.
+
+on:
+  pull_request:
+    branches: [master]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: PR number
+        type: number
+        required: true
+
+concurrency:
+  group: update-review-${{ github.event.pull_request.number || inputs.pr }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  PR: ${{ github.event.pull_request.number || inputs.pr }}
+  # Hidden marker identifying our comment, so reruns edit it instead of adding one
+  MARKER: '<!-- update-review -->'
+  MODEL: opencode/deepseek-v4.1-flash-free
+  # GitHub release binary: opencode 2.x isn't on npm
+  OPENCODE_VERSION: 2.2.5
+  OPENCODE_SHA256: 09f44302c10fd036912f59c81fd1aef5df45dd06f649197f9dfc9bbe2a79614e
+
+jobs:
+  # The master ruleset requires this check by name, so don't rename it.
+  update-review:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (startsWith(github.head_ref, 'update/') && github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    # Let the model take as long as it needs (GitHub-hosted runners stop at 360)
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # all branches, to diff the PR head against its merge base
+          fetch-depth: 0
+          # the model can run git, keep the token out of .git/config
+          persist-credentials: false
+
+      - name: Collect PR data
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          out=$RUNNER_TEMP/diff
+          mkdir -p "$out"
+          gh pr view "$PR" --json title,body,headRefOid,baseRefName,mergeCommit >"$RUNNER_TEMP/pr.json"
+          head=$(jq -r .headRefOid "$RUNNER_TEMP/pr.json")
+          # the branch may be gone (closed PR); GitHub keeps the head under pull/<n>/head
+          # (token passed for this fetch only, checkout doesn't persist it)
+          git -c "http.extraheader=AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)" \
+            fetch -q origin "pull/$PR/head"
+          # a merged PR (manual re-run) is diffed against the base branch as it was before the merge
+          base_ref=$(jq -r 'if .mergeCommit then .mergeCommit.oid + "^1" else "origin/" + .baseRefName end' "$RUNNER_TEMP/pr.json")
+          base=$(git merge-base "$base_ref" "$head")
+          jq -r '"# " + .title + "\n\n" + .body' "$RUNNER_TEMP/pr.json" >"$out/pr.md"
+          git diff "$base" "$head" | head -c 300000 >"$out/pr.diff"
+          # our repo at the PR head, to check the manifest the update must fit
+          mkdir "$out/repo"
+          git archive "$head" | tar -x -C "$out/repo"
+          echo "base=$base" >>"$GITHUB_OUTPUT"
+          echo "head=$head" >>"$GITHUB_OUTPUT"
+
+      # yq, jq and unzip are preinstalled on ubuntu-latest. The token is for release notes only.
+      - name: Fetch upstream source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: .github/scripts/upstream-source.sh "${{ steps.pr.outputs.base }}" "${{ steps.pr.outputs.head }}" "$RUNNER_TEMP/diff" "$RUNNER_TEMP/upstream.tsv"
+
+      - name: Install opencode
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/opencode.tar.gz" \
+            "https://github.com/anomalyco/opencode/releases/download/v$OPENCODE_VERSION/opencode-linux-x64.tar.gz"
+          echo "$OPENCODE_SHA256  $RUNNER_TEMP/opencode.tar.gz" | sha256sum -c -
+          mkdir -p "$RUNNER_TEMP/bin"
+          tar -xzf "$RUNNER_TEMP/opencode.tar.gz" -C "$RUNNER_TEMP/bin" opencode
+          echo "$RUNNER_TEMP/bin" >>"$GITHUB_PATH"
+
+      # No GitHub token here: the input is untrusted upstream content
+      - name: Review with opencode
+        id: review
+        working-directory: ${{ runner.temp }}/diff
+        env:
+          OPENCODE_CONFIG: ${{ github.workspace }}/.github/opencode/opencode.json
+        run: |
+          # The answer only counts if its session read the whole upstream source and searched
+          # for every new version. Each attempt is a fresh session (own data dirs, private
+          # server), told what the previous one missed.
+          reviewed=
+          retry=
+          for attempt in 1 2 3; do
+            echo "::group::opencode attempt $attempt"
+            export XDG_DATA_HOME=$RUNNER_TEMP/opencode-data-$attempt XDG_STATE_HOME=$RUNNER_TEMP/opencode-state-$attempt
+            # a fixed --title skips opencode's title generation, which otherwise goes to a
+            # "small model" it guesses from the provider
+            if ! opencode run --standalone --title "update-review PR $PR" --model "$MODEL" \
+              "$(cat "$GITHUB_WORKSPACE/.github/opencode/prompt.md")$retry" >"$RUNNER_TEMP/opencode-$attempt.log"; then
+              echo "::endgroup::"
+              retry=
+              continue
+            fi
+            # own data dir, so the only session is ours
+            id=$(opencode session list --standalone --format json | jq -r '.[0].id')
+            opencode session export --standalone "$id" >"$RUNNER_TEMP/session-$attempt.json"
+            echo "::endgroup::"
+            cp "$RUNNER_TEMP/session-$attempt.json" "$RUNNER_TEMP/session.json"
+            # the answer is the text of the last assistant message
+            jq -r '[.messages[] | select(.type == "assistant")] | last | [.content[] | select(.type == "text") | .text] | join("\n")' \
+              "$RUNNER_TEMP/session.json" >"$RUNNER_TEMP/summary.md"
+            unread=$("$GITHUB_WORKSPACE/.github/scripts/review-check.sh" "$RUNNER_TEMP/session.json" "$RUNNER_TEMP/upstream.tsv" "$RUNNER_TEMP/sources.md") || true
+            if [ -z "$unread" ] && [ -s "$RUNNER_TEMP/summary.md" ]; then
+              reviewed=1
+              break
+            fi
+            echo "attempt $attempt rejected, empty answer or missing: $unread"
+            retry=$(printf '\n\nYour previous attempt was rejected because it skipped these. Do each of them (read every file with its own `cat`), then review again and answer:\n%s\n' "$unread")
+          done
+          if [ -z "$reviewed" ]; then
+            # without a summary the comment step reports the PR as not reviewed
+            rm -f "$RUNNER_TEMP/summary.md"
+            echo "upstream source was not reviewed after 3 attempts" >&2
+            exit 1
+          fi
+          # drop any preamble before the risk line
+          if grep -q '^\*\*Risk' "$RUNNER_TEMP/summary.md"; then
+            sed -i -n '/^\*\*Risk/,$p' "$RUNNER_TEMP/summary.md"
+          fi
+          # the model tends to justify empty sections ("None. Only X changed..."), drop that
+          sed -i -E 's/^(- )?(None|No manual steps)[[:space:]]*(\.|;|:|,|—|-).*$/\2./' "$RUNNER_TEMP/summary.md"
+          # nothing after "No manual steps." (the model likes to append "Sources: ..." or "Note: ...")
+          awk '{print} /^### Upgrade steps/{u=1} u && /^No manual steps\.$/{exit}' "$RUNNER_TEMP/summary.md" >"$RUNNER_TEMP/summary.tmp"
+          mv "$RUNNER_TEMP/summary.tmp" "$RUNNER_TEMP/summary.md"
+          { echo; cat "$RUNNER_TEMP/sources.md"; } >>"$RUNNER_TEMP/summary.md"
+          if [ -s "$RUNNER_TEMP/upstream.tsv.missing" ]; then
+            { printf '> [!WARNING]\n> Upstream source not available for %s bump(s), reviewed without it. See Sources checked.\n\n' "$(wc -l <"$RUNNER_TEMP/upstream.tsv.missing")"
+              cat "$RUNNER_TEMP/summary.md"; } >"$RUNNER_TEMP/summary.tmp"
+            mv "$RUNNER_TEMP/summary.tmp" "$RUNNER_TEMP/summary.md"
+          fi
+          # session tokens, for the footer (the model is free, so no cost)
+          jq -r '[.messages[] | select(.type == "assistant") | .tokens] |
+            def k: . / 1000 | round | tostring + "k";
+            "usage=" + (map(.input // 0) | add | k) + " in, "
+            + (map(.output // 0) | add | k) + " out, "
+            + (map(.cache.read // 0) | add | k) + " cached"' \
+            "$RUNNER_TEMP/session.json" >>"$GITHUB_OUTPUT"
+
+      - name: Upload diffs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: update-review-pr${{ env.PR }}
+          path: |
+            ${{ runner.temp }}/diff
+            !${{ runner.temp }}/diff/repos
+            !${{ runner.temp }}/diff/repo
+            ${{ runner.temp }}/summary.md
+            ${{ runner.temp }}/session-*.json
+            ${{ runner.temp }}/opencode-*.log
+          retention-days: 14
+
+      # Also on failure, so a PR that wasn't reviewed says so (and drops an older review)
+      - name: Post sticky comment
+        if: success() || failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          USAGE: ${{ steps.review.outputs.usage || 'usage n/a' }}
+          HEAD_SHA: ${{ steps.pr.outputs.head }}
+        run: |
+          body=$RUNNER_TEMP/comment.md
+          {
+            echo "$MARKER"
+            echo "## 🤖 Update review"
+            echo
+            if [ ! -s "$RUNNER_TEMP/summary.md" ]; then
+              echo "**⛔ Not reviewed**: the review failed, do not merge. See the [run]($RUN_URL)."
+            # GitHub's comment limit is 65536 characters
+            elif [ "$(wc -m <"$RUNNER_TEMP/summary.md")" -gt 60000 ]; then
+              head -c 60000 "$RUNNER_TEMP/summary.md"
+              printf '\n\n_[truncated, see the run artifact]_\n'
+            else
+              cat "$RUNNER_TEMP/summary.md"
+            fi
+            echo
+            echo "---"
+            echo "<sub>\`${MODEL#opencode/}\` @ $HEAD_SHA · $USAGE · [raw diffs]($RUN_URL)</sub>"
+          } >"$body"
+          id=$(gh api --paginate "repos/$GITHUB_REPOSITORY/issues/$PR/comments" \
+            --jq ".[] | select(.user.login == \"github-actions[bot]\" and (.body | startswith(\"$MARKER\"))) | .id" | head -n1)
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$id" -F "body=@$body" >/dev/null
+            echo "Updated comment $id"
+          else
+            gh api -X POST "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -F "body=@$body" >/dev/null
+            echo "Posted new comment"
+          fi

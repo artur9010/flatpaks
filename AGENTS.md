@@ -39,6 +39,18 @@ Each app gets one PR, from the `update/<app-id>` branch. A newer version force-p
 
 Runtime versions and GitHub Action versions aren't covered, so bump those by hand.
 
+## Update reviews
+
+`.github/workflows/update-review.yml` posts an AI review as a sticky comment (marker `<!-- update-review -->`) on every PR from an `update/` branch. It covers the risk, the upstream source changes, anything that breaks the sandbox or the build, impact on the manifest, package maintenance and upgrade steps. Its job `update-review` is required by the `master` ruleset, so an update that wasn't reviewed can't be merged. Other PRs skip the job, which counts as passing. Don't rename the job without updating the ruleset.
+
+- `.github/scripts/upstream-source.sh` finds every source whose `url` or `commit` changed, in all `.yml` and `.json` files of an app folder. It works out the upstream repo from the URL (GitHub releases, archives, raw files, git sources) and writes the commits and source diff between the old and new versions as `<app-id>/upstream/<repo>/part-NNN.txt`, plus both versions' GitHub release notes. When two release tags are the same commit, or a tag is missing, it diffs the unpacked release archives instead. Sources not on GitHub are reported as not available, and the review goes on without them.
+- `.github/upstream-sources.yaml` scopes a repo's diff to some paths, for monorepos like Horizon's. Its `cargo` entries add the path dependencies of those Cargo manifests. A repo that isn't listed is diffed whole. Diffs over `MAX_SOURCE_BYTES` are cut, and the comment says how much was reviewed.
+- Each part has random start and end tokens, kept outside the model's directory. `.github/scripts/review-check.sh` accepts a session only if one non-truncated tool output holds both tokens of every part, and a `websearch` query names each new version. A rejected session is retried as a fresh one with the list of what it missed, up to 3 attempts. If none passes, the PR gets a `⛔ Not reviewed` comment and the job fails.
+- The `### Sources checked` section is written by `review-check.sh` from the session's tool calls, not by the model.
+- The model is opencode 2.x, the GitHub release binary pinned in `OPENCODE_VERSION` and `OPENCODE_SHA256` (2.x isn't on npm). It uses the free OpenCode Zen model `opencode/deepseek-v4.1-flash-free`, with no API key. Both are bumped by hand. When the free model disappears, pick another from `opencode models` (IDs ending in `-free`) and update `MODEL` in the workflow and `model` in `.github/opencode/opencode.json`.
+- The model's tools are set in `.github/opencode/opencode.json`: read, `git`, read-only `ls`/`cat`/`head`/`tail`/`grep`/`diff`/…, and the built-in `websearch` and `webfetch`, with no `$` and no `../`. The output format is in `.github/opencode/prompt.md`. It gets no GitHub token, and the job may run up to 300 minutes.
+- Check denied tool calls with `gh run view <id> --log | grep -a "Permission denied"`. To satisfy a PR's check, use **Re-run jobs** on the PR's run. `gh workflow run update-review.yml -f pr=<n>` refreshes the comment but doesn't count as the PR's check. Locally, use `nix-shell -p opencode` (a 2.x build) and `opencode run --standalone`.
+
 ## Testing locally
 
 ```
