@@ -1,0 +1,115 @@
+app-id: com.recomplauncher.app
+# GNOME is the only runtime with WebKitGTK 4.1, which Tauri needs. The SDK, not the Platform:
+# recomps that build themselves from a clone need git and a compiler, and .py entry points python3.
+runtime: org.gnome.Sdk
+runtime-version: '51'
+sdk: org.gnome.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+command: recomplauncher
+finish-args:
+  - --share=ipc
+  - --share=network
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --socket=pulseaudio
+  # GPU, and controllers: gilrs reads /dev/input, PlayStation pads are read through /dev/hidraw*
+  - --device=all
+  # Proton (through umu-run) runs 32-bit code
+  - --allow=multiarch
+  # Tray icon and notifications
+  - --talk-name=org.kde.StatusNotifierWatcher
+  - --talk-name=org.freedesktop.Notifications
+  # Recomps released as .flatpak bundles are installed and started by the host's flatpak
+  - --talk-name=org.freedesktop.Flatpak
+  # The default game library (library.rs::default_library_dir)
+  - --filesystem=~/Games/Recomp Library:create
+  - --filesystem=xdg-download
+  # Desktop and app menu shortcuts
+  - --filesystem=xdg-desktop
+  - --filesystem=xdg-data/applications:create
+  # Screenshots go to Pictures/RecompLauncher
+  - --filesystem=xdg-pictures/RecompLauncher:create
+  # Steam entries, and the Protons Steam has
+  - --filesystem=~/.steam
+  - --filesystem=~/.local/share/Steam
+  - --filesystem=~/.var/app/com.valvesoftware.Steam/data/Steam
+  # Discord Rich Presence
+  - --filesystem=xdg-run/app/com.discordapp.Discord:create
+  - --filesystem=xdg-run/discord-ipc-0
+add-extensions:
+  org.freedesktop.Platform.Compat.i386:
+    directory: lib/i386-linux-gnu
+    version: '26.08'
+  org.freedesktop.Platform.GL32:
+    directory: lib/i386-linux-gnu/GL
+    version: '1.4'
+    versions: 26.08;1.4
+    subdirectories: true
+    no-autodownload: true
+    autodelete: false
+    add-ld-path: lib
+    merge-dirs: vulkan/icd.d;glvnd/egl_vendor.d;OpenCL/vendors;lib/dri;lib/d3d;vulkan/explicit_layer.d;vulkan/implicit_layer.d
+    download-if: active-gl-driver
+    enable-if: active-gl-driver
+cleanup-commands:
+  - mkdir -p ${FLATPAK_DEST}/lib/i386-linux-gnu/GL
+modules:
+  # From flathub/shared-modules at 3d87a6632cf1e787b009e234b13a8ccfa6d15df8. The tray loads
+  # libayatana-appindicator3.so.1 by name, which /app/lib has.
+  - shared-modules/libayatana-appindicator/libayatana-appindicator-gtk3.json
+
+  # Windows-only recomps start through umu-run, which brings its own Proton
+  - name: umu-launcher
+    buildsystem: simple
+    build-commands:
+      - install -Dm755 umu-run -t ${FLATPAK_DEST}/bin
+    sources:
+      - type: archive
+        url: https://github.com/Open-Wine-Components/umu-launcher/releases/download/1.4.4/umu-launcher-1.4.4-zipapp.tar
+        sha256: eb590691841f7fad3fc3ad8fd5db4ccb87849fe7948e62b28ece7a4ee48cc851
+        x-checker-data:
+          type: json
+          url: https://api.github.com/repos/Open-Wine-Components/umu-launcher/releases/latest
+          version-query: .tag_name
+          url-query: .assets[] | select(.name | endswith("-zipapp.tar")) | .browser_download_url
+
+  - name: recomplauncher
+    buildsystem: simple
+    build-options:
+      append-path: /usr/lib/sdk/rust-stable/bin
+      # Cargo fetches the crates itself: update PRs only bump the source zip, so a vendored
+      # cargo-sources.json would go stale whenever Cargo.lock changes.
+      build-args:
+        - --share=network
+      env:
+        CARGO_HOME: /run/build/recomplauncher/cargo
+    build-commands:
+      - cargo build --release --locked --manifest-path src-tauri/Cargo.toml
+      - install -Dm755 src-tauri/target/release/recomplauncher -t ${FLATPAK_DEST}/bin
+      - install -Dm755 flatpak -t ${FLATPAK_DEST}/bin
+      - install -Dm644 ${FLATPAK_ID}.desktop -t ${FLATPAK_DEST}/share/applications
+      - install -Dm644 src-tauri/icons/128x128.png ${FLATPAK_DEST}/share/icons/hicolor/128x128/apps/${FLATPAK_ID}.png
+      - install -Dm644 src-tauri/icons/128x128@2x.png ${FLATPAK_DEST}/share/icons/hicolor/256x256/apps/${FLATPAK_ID}.png
+      - install -Dm644 src-tauri/icons/icon.png ${FLATPAK_DEST}/share/icons/hicolor/512x512/apps/${FLATPAK_ID}.png
+      - install -Dm644 ${FLATPAK_ID}.metainfo.xml -t ${FLATPAK_DEST}/share/metainfo
+      - install -Dm644 LICENSE -t ${FLATPAK_DEST}/share/licenses/${FLATPAK_ID}
+    sources:
+      # The source zip attached to the release: upstream's git tags all point at one older commit.
+      # Asset names don't follow a fixed pattern, so it's found by its -source.zip ending.
+      - type: archive
+        url: https://github.com/elripalda/RecompLauncher/releases/download/v0.90.0-beta.17/RecompLauncher-0.90.0-beta.17-source.zip
+        sha256: ed72caf214324512195817d39e28493e594fd8f417c74425f9ea0c4ac28a22db
+        x-checker-data:
+          type: json
+          # Every release is a prerelease, so /releases/latest has nothing
+          url: https://api.github.com/repos/elripalda/RecompLauncher/releases?per_page=100
+          version-query: .[0].tag_name | sub("^v"; "")
+          url-query: .[0].assets[] | select(.name | endswith("-source.zip")) | .browser_download_url
+          is-main-source: true
+      - type: file
+        path: flatpak
+      - type: file
+        path: com.recomplauncher.app.desktop
+      - type: file
+        path: com.recomplauncher.app.metainfo.xml

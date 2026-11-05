@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.recomplauncher.app</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>RecompLauncher</name>
+  <summary>Find, install, update and play PC recomps</summary>
+  <developer id="com.recomplauncher">
+    <name>Ripalda</name>
+  </developer>
+  <description>
+    <p>
+      RecompLauncher finds, installs, updates and starts PC recomps, native ports of console
+      games, from each developer's own GitHub releases.
+    </p>
+    <p>
+      No game files are included: every game needs your own copy, which the launcher finds in
+      your folders.
+    </p>
+    <ul>
+      <li>Browse the catalog and install recomps in one click</li>
+      <li>Keep them up to date</li>
+      <li>Install mods from Thunderstore and GameBanana</li>
+      <li>Back up saves, and sync them with a RecompStore account</li>
+      <li>Play Windows-only recomps through Proton</li>
+      <li>Big Picture mode for controllers and Steam Deck</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">com.recomplauncher.app.desktop</launchable>
+  <url type="homepage">https://recomplauncher.com</url>
+  <url type="bugtracker">https://github.com/elripalda/RecompLauncher/issues</url>
+  <url type="vcs-browser">https://github.com/elripalda/RecompLauncher</url>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/elripalda/RecompLauncher/d5e5a4ef045ab85b59113212bac4ff7c95dc9a1d/docs/images/home.jpg</image>
+      <caption>The home page</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/elripalda/RecompLauncher/d5e5a4ef045ab85b59113212bac4ff7c95dc9a1d/docs/images/discover.jpg</image>
+      <caption>Finding recomps</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/elripalda/RecompLauncher/d5e5a4ef045ab85b59113212bac4ff7c95dc9a1d/docs/images/game.jpg</image>
+      <caption>A game's page</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/elripalda/RecompLauncher/d5e5a4ef045ab85b59113212bac4ff7c95dc9a1d/docs/images/bigpicture.jpg</image>
+      <caption>Big Picture mode</caption>
+    </screenshot>
+  </screenshots>
+  <content_rating type="oars-1.1">
+    <content_attribute id="social-info">mild</content_attribute>
+  </content_rating>
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+    <control>gamepad</control>
+  </supports>
+  <releases>
+    <release version="0.90.0-beta.17" date="2026-11-05">
+      <url type="details">https://github.com/elripalda/RecompLauncher/releases/tag/v0.90.0-beta.17</url>
+      <description/>
+    </release>
+  </releases>
+</component>

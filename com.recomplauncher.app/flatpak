@@ -1,0 +1,3 @@
+#!/bin/sh
+# Recomps released as .flatpak bundles are installed and run by the host's flatpak.
+exec flatpak-spawn --host flatpak "$@"
