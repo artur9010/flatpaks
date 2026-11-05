@@ -4,9 +4,10 @@ name: Update review
 # comment on update PRs, the update/<app-id> branches update.yml opens.
 # CI fetches the upstream source of every bumped source (upstream-source.sh); the model
 # (opencode, .github/opencode/) must read all of it and search the web for each new version,
-# or review-check.sh rejects the session. The model is a free OpenCode Zen model, so no API
-# key. It can read the diff dir, run git and read-only shell commands, search and fetch web
-# pages, nothing else, and gets no GitHub token.
+# or review-check.sh rejects the session. The model runs on OpenRouter (OPENROUTER_API_KEY,
+# passed to the review step only; give the key a credit limit). It can read the diff dir, run
+# git and read-only shell commands, search and fetch web pages, nothing else, and gets no
+# GitHub token.
 # If no session passes, the PR gets a "not reviewed" comment and the job fails. The master
 # ruleset requires this job, so keep its name. Other PRs skip it, which counts as passing.
 
@@ -33,7 +34,7 @@ env:
   PR: ${{ github.event.pull_request.number || inputs.pr }}
   # Hidden marker identifying our comment, so reruns edit it instead of adding one
   MARKER: '<!-- update-review -->'
-  MODEL: opencode/glm-5.3-flash-free
+  MODEL: openrouter/z-ai/glm-5.3-flash
   # GitHub release binary: opencode 2.x isn't on npm
   OPENCODE_VERSION: 2.2.5
   OPENCODE_SHA256: 09f44302c10fd036912f59c81fd1aef5df45dd06f649197f9dfc9bbe2a79614e
@@ -100,6 +101,7 @@ jobs:
         working-directory: ${{ runner.temp }}/diff
         env:
           OPENCODE_CONFIG: ${{ github.workspace }}/.github/opencode/opencode.json
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           # The answer only counts if its session read the whole upstream source and searched
           # for every new version. Each attempt is a fresh session (own data dirs, private
@@ -154,13 +156,14 @@ jobs:
               cat "$RUNNER_TEMP/summary.md"; } >"$RUNNER_TEMP/summary.tmp"
             mv "$RUNNER_TEMP/summary.tmp" "$RUNNER_TEMP/summary.md"
           fi
-          # session tokens, for the footer (the model is free, so no cost)
-          jq -r '[.messages[] | select(.type == "assistant") | .tokens] |
+          # session tokens and cost of every attempt, for the footer
+          jq -s -r '[.[].messages[] | select(.type == "assistant")] |
             def k: . / 1000 | round | tostring + "k";
-            "usage=" + (map(.input // 0) | add | k) + " in, "
-            + (map(.output // 0) | add | k) + " out, "
-            + (map(.cache.read // 0) | add | k) + " cached"' \
-            "$RUNNER_TEMP/session.json" >>"$GITHUB_OUTPUT"
+            "usage=" + (map(.tokens.input // 0) | add | k) + " in, "
+            + (map(.tokens.output // 0) | add | k) + " out, "
+            + (map(.tokens.cache.read // 0) | add | k) + " cached, $"
+            + (map(.cost // 0) | add * 100 | round / 100 | tostring)' \
+            "$RUNNER_TEMP"/session-*.json >>"$GITHUB_OUTPUT"
 
       - name: Upload diffs
         if: always()
@@ -201,7 +204,7 @@ jobs:
             fi
             echo
             echo "---"
-            echo "<sub>\`${MODEL#opencode/}\` @ $HEAD_SHA · $USAGE · [raw diffs]($RUN_URL)</sub>"
+            echo "<sub>\`${MODEL#*/}\` @ $HEAD_SHA · $USAGE · [raw diffs]($RUN_URL)</sub>"
           } >"$body"
           id=$(gh api --paginate "repos/$GITHUB_REPOSITORY/issues/$PR/comments" \
             --jq ".[] | select(.user.login == \"github-actions[bot]\" and (.body | startswith(\"$MARKER\"))) | .id" | head -n1)

@@ -6,8 +6,8 @@
 # The session passes only when:
 # - every part was read: a single, non-truncated tool output holds both its start and
 #   end tokens;
-# - every bumped version was searched for: a websearch query contains it (CVEs and
-#   regressions reported against the new version).
+# - every bumped version was searched for: an Exa search query contains it (CVEs and
+#   regressions reported against the new version), with exa_web_search_exa.
 # What's missing is printed to stdout, one item per line, and the exit code is 1.
 #
 # The session is opencode 2.x `session export` JSON: messages[] with .type, and
@@ -34,8 +34,8 @@ done <"$manifest.parts"
 
 while IFS=$'\t' read -r _ label _ _ _ _ _ _ _ version; do
   [ -n "$version" ] || continue
-  if ! jq -e --arg v "$version" "any($tools; .name == \"websearch\" and (.state.input.query | contains(\$v)))" "$session" >/dev/null; then
-    echo "a websearch query containing \"$version\", for $label (CVEs, regressions and issues reported against it)"
+  if ! jq -e --arg v "$version" "any($tools; .name == \"exa_web_search_exa\" and (.state.input.query | contains(\$v)))" "$session" >/dev/null; then
+    echo "an exa_web_search_exa query containing \"$version\", for $label (CVEs, regressions and issues reported against it)"
     missing=1
   fi
 done <"$manifest"
@@ -62,7 +62,8 @@ done <"$manifest"
     | sub(\"\\\\.git$\"; \"\") | \"- github: cloned \" + ." "$session" | sort -u |
     grep -vFf <(cut -f2 "$manifest" | sed 's/^/- github: cloned /') || true
   jq -r "$tools
-    | if .name == \"websearch\" then \"- web search: \" + .state.input.query
+    | if .name == \"exa_web_search_exa\" then \"- web search: \" + .state.input.query
+      elif .name == \"exa_web_fetch_exa\" then .state.input.urls[]? | \"- web page: \" + .
       elif .name == \"webfetch\" then \"- web page: \" + .state.input.url
       else empty end" "$session"
 } >"$sources"
