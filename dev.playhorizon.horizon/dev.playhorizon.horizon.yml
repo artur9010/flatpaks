@@ -9,7 +9,9 @@ finish-args:
   - --share=ipc
   - --share=network
   - --socket=wayland
-  - --socket=fallback-x11
+  # The game's clipboard (arboard) uses the data-control protocol, which compositors hide
+  # from sandboxed apps, and then falls back to X11 through XWayland
+  - --socket=x11
   - --socket=pulseaudio
   # GPU, and controllers: gilrs reads /dev/input, DualSense rumble and lights need /dev/hidraw*
   - --device=all
@@ -23,7 +25,8 @@ modules:
   - name: horizon-launcher
     buildsystem: simple
     build-commands:
-      - install -Dm755 horizon-launcher -t ${FLATPAK_DEST}/bin
+      - install -Dm755 horizon-launcher ${FLATPAK_DEST}/bin/horizon-launcher-bin
+      - install -Dm755 horizon-launcher.sh ${FLATPAK_DEST}/bin/horizon-launcher
       - install -Dm644 horizon-launcher.desktop ${FLATPAK_DEST}/share/applications/${FLATPAK_ID}.desktop
       # The game's window has the Wayland app id "horizon"; this hidden entry gives it its icon
       - install -Dm644 horizon.desktop ${FLATPAK_DEST}/share/applications/${FLATPAK_ID}.game.desktop
@@ -68,3 +71,5 @@ modules:
         sha256: b4b374ae9d0f2d8f7be35c6783e41327431da3b5662605da9ba31493630621df
       - type: file
         path: dev.playhorizon.horizon.metainfo.xml
+      - type: file
+        path: horizon-launcher.sh
