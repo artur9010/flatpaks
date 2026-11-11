@@ -22,18 +22,22 @@ finish-args:
   - --talk-name=org.freedesktop.Notifications
   # Recomps released as .flatpak bundles are installed and started by the host's flatpak
   - --talk-name=org.freedesktop.Flatpak
-  # The default game library (library.rs::default_library_dir)
-  - --filesystem=~/Games/Recomp Library:create
+  # The default game library (~/Games/Recomp Library) and the ROM folder first-run setup
+  # offers (~/Games/ROMs), plus other drives, which are listed as libraries directly
+  - --filesystem=~/Games:create
+  - --filesystem=/run/media
+  - --filesystem=/media
+  - --filesystem=/mnt
   - --filesystem=xdg-download
   # Desktop and app menu shortcuts
   - --filesystem=xdg-desktop
   - --filesystem=xdg-data/applications:create
   # Screenshots go to Pictures/RecompLauncher
   - --filesystem=xdg-pictures/RecompLauncher:create
-  # Steam entries, and the Protons Steam has
+  # Steam entries, the Protons Steam has, and steam.pipe to tell if Steam is running
   - --filesystem=~/.steam
   - --filesystem=~/.local/share/Steam
-  - --filesystem=~/.var/app/com.valvesoftware.Steam/data/Steam
+  - --filesystem=~/.var/app/com.valvesoftware.Steam
   # Discord Rich Presence
   - --filesystem=xdg-run/app/com.discordapp.Discord:create
   - --filesystem=xdg-run/discord-ipc-0
@@ -98,8 +102,8 @@ modules:
       # The source zip attached to the release: upstream's git tags all point at one older commit.
       # Asset names don't follow a fixed pattern, so it's found by its -source.zip ending.
       - type: archive
-        url: https://github.com/elripalda/RecompLauncher/releases/download/v0.90.0-beta.28/RecompLauncher-0.90.0-beta.28-source.zip
-        sha256: e190525e79c6058b4eba271a5bd808ac880e761c814bd1c34b3cce973612e144
+        url: https://github.com/elripalda/RecompLauncher/releases/download/v0.90.0-beta.37/RecompLauncher-0.90.0-beta.37-source.zip
+        sha256: 2aa3c8a33c0788f9628f842fe19f5653f7b6f1d2859064ddec341c3b5e6abf1b
         x-checker-data:
           type: json
           # Every release is a prerelease, so /releases/latest has nothing
