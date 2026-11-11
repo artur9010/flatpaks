@@ -22,18 +22,22 @@ finish-args:
   - --talk-name=org.freedesktop.Notifications
   # Recomps released as .flatpak bundles are installed and started by the host's flatpak
   - --talk-name=org.freedesktop.Flatpak
-  # The default game library (library.rs::default_library_dir)
-  - --filesystem=~/Games/Recomp Library:create
+  # The default game library (~/Games/Recomp Library) and the ROM folder first-run setup
+  # offers (~/Games/ROMs), plus other drives, which are listed as libraries directly
+  - --filesystem=~/Games:create
+  - --filesystem=/run/media
+  - --filesystem=/media
+  - --filesystem=/mnt
   - --filesystem=xdg-download
   # Desktop and app menu shortcuts
   - --filesystem=xdg-desktop
   - --filesystem=xdg-data/applications:create
   # Screenshots go to Pictures/RecompLauncher
   - --filesystem=xdg-pictures/RecompLauncher:create
-  # Steam entries, and the Protons Steam has
+  # Steam entries, the Protons Steam has, and steam.pipe to tell if Steam is running
   - --filesystem=~/.steam
   - --filesystem=~/.local/share/Steam
-  - --filesystem=~/.var/app/com.valvesoftware.Steam/data/Steam
+  - --filesystem=~/.var/app/com.valvesoftware.Steam
   # Discord Rich Presence
   - --filesystem=xdg-run/app/com.discordapp.Discord:create
   - --filesystem=xdg-run/discord-ipc-0
