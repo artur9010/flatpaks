@@ -57,9 +57,13 @@
     <control>gamepad</control>
   </supports>
   <releases>
+    <release version="0.90.0-beta.37" date="2026-11-11">
+      <url type="details">https://github.com/elripalda/RecompLauncher/releases/tag/v0.90.0-beta.37</url>
+      <description></description>
+    </release>
     <release version="0.90.0-beta.28" date="2026-11-09">
       <url type="details">https://github.com/elripalda/RecompLauncher/releases/tag/v0.90.0-beta.28</url>
-      <description></description>
+      <description/>
     </release>
     <release version="0.90.0-beta.24" date="2026-11-08">
       <url type="details">https://github.com/elripalda/RecompLauncher/releases/tag/v0.90.0-beta.24</url>
