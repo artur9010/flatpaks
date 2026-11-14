@@ -102,8 +102,8 @@ modules:
       # The source zip attached to the release: upstream's git tags all point at one older commit.
       # Asset names don't follow a fixed pattern, so it's found by its -source.zip ending.
       - type: archive
-        url: https://github.com/elripalda/RecompLauncher/releases/download/v0.90.0-beta.42/RecompLauncher-0.90.0-beta.42-source.zip
-        sha256: 1ec97a5343862aa78ed11b40c23f79079d8bea30c3286605a21f7d41f7568640
+        url: https://github.com/elripalda/RecompLauncher/releases/download/v0.90.0-beta.48/RecompLauncher-0.90.0-beta.48-source.zip
+        sha256: a5e2b3df29736c1fdf6b1ffd424a7001c225e1f38842a9f3e34aabe82e5fc01c
         x-checker-data:
           type: json
           # Every release is a prerelease, so /releases/latest has nothing
