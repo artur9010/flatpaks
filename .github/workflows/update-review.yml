@@ -4,8 +4,8 @@ name: Update review
 # comment on update PRs, the update/<app-id> branches update.yml opens.
 # CI fetches the upstream source of every bumped source (upstream-source.sh); the model
 # (opencode, .github/opencode/) must read all of it and search the web for each new version,
-# or review-check.sh rejects the session. The model runs on OpenRouter (OPENROUTER_API_KEY,
-# passed to the review step only; give the key a credit limit). It can read the diff dir, run
+# or review-check.sh rejects the session. The model is a free OpenCode Zen model, so there is
+# no API key or cost. It can read the diff dir, run
 # git and read-only shell commands, search and fetch web pages, nothing else, and gets no
 # GitHub token.
 # If no session passes, the PR gets a "not reviewed" comment and the job fails. The master
@@ -34,7 +34,7 @@ env:
   PR: ${{ github.event.pull_request.number || inputs.pr }}
   # Hidden marker identifying our comment, so reruns edit it instead of adding one
   MARKER: '<!-- update-review -->'
-  MODEL: openrouter/z-ai/glm-5.3-flash
+  MODEL: opencode/deepseek-v4.1-flash-free
   # GitHub release binary: opencode 2.x isn't on npm
   OPENCODE_VERSION: 2.2.5
   OPENCODE_SHA256: 09f44302c10fd036912f59c81fd1aef5df45dd06f649197f9dfc9bbe2a79614e
@@ -101,7 +101,6 @@ jobs:
         working-directory: ${{ runner.temp }}/diff
         env:
           OPENCODE_CONFIG: ${{ github.workspace }}/.github/opencode/opencode.json
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           # The answer only counts if its session read the whole upstream source and searched
           # for every new version. Each attempt is a fresh session (own data dirs, private
