@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.phantomptr.ps5upload</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>PS5Upload</name>
+  <summary>Send games, apps and homebrew to a jailbroken PS5</summary>
+  <developer id="com.phantomptr">
+    <name>PhantomPtr</name>
+  </developer>
+  <description>
+    <p>
+      PS5Upload is a companion app for a jailbroken PS5. It sends games, apps and homebrew to
+      the console, and manages it from your computer.
+    </p>
+    <ul>
+      <li>Upload games and homebrew, and install packages</li>
+      <li>Browse and manage the console's files and games</li>
+      <li>Back up and restore saves, screenshots and clips</li>
+      <li>Stream and play PS5 games, alone or with friends</li>
+      <li>Use several computers and phones with one PS5</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">com.phantomptr.ps5upload.desktop</launchable>
+  <url type="homepage">https://github.com/phantomptr/ps5upload</url>
+  <url type="bugtracker">https://github.com/phantomptr/ps5upload/issues</url>
+  <url type="vcs-browser">https://github.com/phantomptr/ps5upload</url>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/phantomptr/ps5upload/cf428b3d6a48c318f9cae390e31a0e3ae7b1f0be/site/assets/shots/home-dark.webp</image>
+      <caption>The home page</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/phantomptr/ps5upload/cf428b3d6a48c318f9cae390e31a0e3ae7b1f0be/site/assets/shots/games-dark.webp</image>
+      <caption>Games on the console</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/phantomptr/ps5upload/cf428b3d6a48c318f9cae390e31a0e3ae7b1f0be/site/assets/shots/files-dark.webp</image>
+      <caption>The console's files</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/phantomptr/ps5upload/cf428b3d6a48c318f9cae390e31a0e3ae7b1f0be/site/assets/shots/play-dark.webp</image>
+      <caption>Streaming a PS5 game</caption>
+    </screenshot>
+  </screenshots>
+  <content_rating type="oars-1.1">
+    <content_attribute id="social-info">mild</content_attribute>
+  </content_rating>
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+  </supports>
+  <releases>
+    <release version="12.6.41" date="2026-11-27">
+      <url type="details">https://github.com/phantomptr/ps5upload/releases/tag/v12.6.41</url>
+      <description/>
+    </release>
+  </releases>
+</component>
