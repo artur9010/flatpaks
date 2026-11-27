@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=PS5Upload
+Comment=The all-in-one PS5 companion app
+Exec=ps5upload-desktop %u
+Icon=com.phantomptr.ps5upload
+StartupWMClass=ps5upload-desktop
+Terminal=false
+Categories=Utility;
+Keywords=PS5;PlayStation;homebrew;upload;
+MimeType=application/x-newton-compatible-pkg;x-scheme-handler/ps5upload;

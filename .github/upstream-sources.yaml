@@ -16,3 +16,13 @@ repos:
     exclude:
       # Translations
       - launcher/lang
+  # The app, its engine and the PS5 payload it sends; not the website, tests or translations
+  phantomptr/ps5upload:
+    exclude:
+      - site
+      - tests
+      - bench
+      - client/e2e
+      - client/site-shots
+      - client/src/i18n/locales
+      - client/src/console/locales

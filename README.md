@@ -23,6 +23,7 @@ flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/fl
 |---|---|
 | [Horizon launcher](https://github.com/horizon-rust/horizon) | `dev.playhorizon.horizon` |
 | [RecompLauncher](https://recomplauncher.com) ([sandbox note](com.recomplauncher.app/README.md)) | `com.recomplauncher.app` |
+| [PS5Upload](https://github.com/phantomptr/ps5upload) ([sandbox note](com.phantomptr.ps5upload/README.md)) | `com.phantomptr.ps5upload` |
 
 ## Adding an app or a version
 

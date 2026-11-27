@@ -1,0 +1,60 @@
+app-id: com.phantomptr.ps5upload
+# GNOME is the only runtime with WebKitGTK 4.1, which Tauri needs
+runtime: org.gnome.Platform
+runtime-version: '51'
+sdk: org.gnome.Sdk
+command: ps5upload-desktop
+finish-args:
+  - --share=ipc
+  # The PS5, other PS5Upload devices, and the engine the app starts on localhost
+  - --share=network
+  - --socket=wayland
+  - --socket=fallback-x11
+  # Game streaming
+  - --socket=pulseaudio
+  # GPU for streaming, and the DualSense, read through /dev/hidraw*
+  - --device=all
+  # Games, homebrew and saves to send, and folders to save to, anywhere in home or on other drives
+  - --filesystem=home
+  - --filesystem=/run/media
+  - --filesystem=/media
+  - --filesystem=/mnt
+  # Tray icon, notifications and GameMode while streaming
+  - --talk-name=org.kde.StatusNotifierWatcher
+  - --talk-name=org.freedesktop.Notifications
+  - --talk-name=com.feralinteractive.GameMode
+modules:
+  # From flathub/shared-modules at 3d87a6632cf1e787b009e234b13a8ccfa6d15df8. The tray loads
+  # libayatana-appindicator3.so.1 by name, which /app/lib has.
+  - shared-modules/libayatana-appindicator/libayatana-appindicator-gtk3.json
+
+  # The upstream .deb: one binary with the engine and RAR helper inside, which it writes to its
+  # data folder and starts. A source build needs npm, the PS5 payload toolchain and the engine.
+  # In the sandbox it can't update itself, so updates come from this repo.
+  - name: ps5upload
+    buildsystem: simple
+    build-commands:
+      - ar x ps5upload.deb
+      - tar xf data.tar.gz
+      - install -Dm755 usr/bin/ps5upload-desktop -t ${FLATPAK_DEST}/bin
+      - install -Dm644 ${FLATPAK_ID}.desktop -t ${FLATPAK_DEST}/share/applications
+      - for size in 32x32 128x128; do install -Dm644 usr/share/icons/hicolor/${size}/apps/ps5upload-desktop.png
+        ${FLATPAK_DEST}/share/icons/hicolor/${size}/apps/${FLATPAK_ID}.png; done
+      - install -Dm644 usr/share/icons/hicolor/256x256@2/apps/ps5upload-desktop.png ${FLATPAK_DEST}/share/icons/hicolor/256x256/apps/${FLATPAK_ID}.png
+      - install -Dm644 ${FLATPAK_ID}.metainfo.xml -t ${FLATPAK_DEST}/share/metainfo
+      - install -Dm644 usr/lib/PS5Upload/LICENSE -t ${FLATPAK_DEST}/share/licenses/${FLATPAK_ID}
+    sources:
+      - type: file
+        url: https://github.com/phantomptr/ps5upload/releases/download/v12.6.41/PS5Upload-12.6.41-linux-x64.deb
+        sha256: 7f0b39185d3a6275d7842030177cd164ec0436129a5baae4b939da90f31ae776
+        dest-filename: ps5upload.deb
+        x-checker-data:
+          type: json
+          url: https://api.github.com/repos/phantomptr/ps5upload/releases/latest
+          version-query: .tag_name | sub("^v"; "")
+          url-query: .assets[] | select(.name | endswith("-linux-x64.deb")) | .browser_download_url
+          is-main-source: true
+      - type: file
+        path: com.phantomptr.ps5upload.desktop
+      - type: file
+        path: com.phantomptr.ps5upload.metainfo.xml
