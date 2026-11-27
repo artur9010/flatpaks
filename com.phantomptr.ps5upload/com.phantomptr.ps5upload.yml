@@ -23,6 +23,11 @@ finish-args:
   - --talk-name=org.kde.StatusNotifierWatcher
   - --talk-name=org.freedesktop.Notifications
   - --talk-name=com.feralinteractive.GameMode
+  # The app turns WebKit's DMA-BUF renderer off on anything but recent NVIDIA, against white
+  # windows on some distros' WebKitGTK. Without it WebKit copies every Remote Play frame back
+  # from the GPU: on a Radeon 760M the picture fell from 30 to 6 fps, and with it on it stays
+  # at 30. Here WebKitGTK always comes from the GNOME runtime. The app keeps a value that is set.
+  - --env=WEBKIT_DISABLE_DMABUF_RENDERER=0
 modules:
   # From flathub/shared-modules at 3d87a6632cf1e787b009e234b13a8ccfa6d15df8. The tray loads
   # libayatana-appindicator3.so.1 by name, which /app/lib has.

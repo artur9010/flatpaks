@@ -20,3 +20,11 @@ Steam's `steam-devices` package covers the same controllers.
 ## Keeping the PC awake
 
 Upstream keeps the PC awake during transfers through `systemd-inhibit`, which isn't in the sandbox, so that option does nothing here.
+
+## Graphics
+
+This build turns on WebKit's DMA-BUF renderer, which upstream turns off on everything but recent NVIDIA drivers. Without it, Remote Play drops to a few frames per second. If the window stays white or blank, turn it off again:
+
+```
+flatpak override --user --env=WEBKIT_DISABLE_DMABUF_RENDERER=1 com.phantomptr.ps5upload
+```
