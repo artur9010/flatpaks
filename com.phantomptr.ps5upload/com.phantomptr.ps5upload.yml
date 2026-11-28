@@ -50,8 +50,8 @@ modules:
       - install -Dm644 usr/lib/PS5Upload/LICENSE -t ${FLATPAK_DEST}/share/licenses/${FLATPAK_ID}
     sources:
       - type: file
-        url: https://github.com/phantomptr/ps5upload/releases/download/v12.6.42/PS5Upload-12.6.42-linux-x64.deb
-        sha256: 129886409f5ac0a0ad050deef3716d4d5bf98ff39e3169fcbab2cf7cd72c2c5d
+        url: https://github.com/phantomptr/ps5upload/releases/download/v13.0.0/PS5Upload-13.0.0-linux-x64.deb
+        sha256: 9e8c0156d7a4e53e814c31044dc3d2b0f5f90c8a8d36928ee2d4a3f809d57222
         dest-filename: ps5upload.deb
         x-checker-data:
           type: json
